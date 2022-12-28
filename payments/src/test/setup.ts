@@ -11,11 +11,11 @@ declare global {
 }
 
 jest.mock('../nats-wrapper');
-jest.mock('../stripe');
+//jest.mock('../stripe');
 
 let mongo: any;
 beforeAll(async () => {
-  process.env.JWT_KEY = 'asdfasdf';
+  process.env.JWT_KEY = 'asdf';
   mongo = await MongoMemoryServer.create();
   const mongoUri = mongo.getUri();
 

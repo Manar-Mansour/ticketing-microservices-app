@@ -57,8 +57,45 @@ it('returns a 400 when purchasing a cancelled order', async () => {
     })
     .expect(400);
 });
-//HTTP Status 204 (No Content) indicates that the server has successfully fulfilled the request and that there is no content to send in the response payload body
+
 it('returns a 201 with valid inputs', async () => {
+  const userId = new mongoose.Types.ObjectId().toHexString();
+  const price = Math.floor(Math.random() * 100000);
+  const order = Order.build({
+    id: new mongoose.Types.ObjectId().toHexString(),
+    userId,
+    version: 0,
+    price,
+    status: OrderStatus.Created
+  });
+  await order.save();
+
+  await request
+    .post('/api/payments')
+    .set('Cookie', global.signin(userId))
+    .send({
+      token: 'tok_visa',
+      orderId: order.id
+    })
+    .expect(201);
+
+  const stripeCharges = await stripe.charges.list({ limit: 50 });
+  const stripeCharge = stripeCharges.data.find((charge) => {
+    return charge.amount === price * 100;
+  });
+
+  expect(stripeCharge).toBeDefined();
+  expect(stripeCharge!.currency).toEqual('usd');
+
+  const payment = await Payment.findOne({
+    orderId: order.id,
+    stripeId: stripeCharge!.id
+  });
+  expect(payment).not.toBeNull();
+});
+
+//HTTP Status 204 (No Content) indicates that the server has successfully fulfilled the request and that there is no content to send in the response payload body
+/* it('returns a 201 with valid inputs', async () => {
   const userId = new mongoose.Types.ObjectId().toHexString();
   const order = Order.build({
     id: new mongoose.Types.ObjectId().toHexString(),
@@ -75,7 +112,7 @@ it('returns a 201 with valid inputs', async () => {
       token: 'tok_visa', //works for stripe accounts in the test mode
       orderId: order.id
     })
-    .expect(201);
+    .expect(400);
   const chargeOptions = (stripe.charges.create as jest.Mock).mock.calls[0][0];
   expect(chargeOptions.source).toEqual('tok_visa');
   expect(chargeOptions.amount).toEqual(20 * 100);
@@ -86,4 +123,4 @@ it('returns a 201 with valid inputs', async () => {
     stripeId: response.body.id
   });
   expect(payment).not.toBeNull();
-});
+}); */
