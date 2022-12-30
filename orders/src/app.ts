@@ -21,7 +21,7 @@ app.use(
   //cookieSession is a middleware
   cookieSession({
     signed: false, //no encryption of cookie
-    secure: process.env.NODE_ENV !== 'test' //cookie will only be used if user is visiting the app over HTTPS connection
+    secure: false
   })
 );
 app.use(currentUser);
